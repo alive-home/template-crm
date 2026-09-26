@@ -6,6 +6,7 @@ import { defineConfig, loadEnv } from "vite"
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "")
+  const api = env.API_PROXY_TARGET ?? "http://localhost:3001"
   return {
     plugins: [
       tanstackRouter({ target: "react", autoCodeSplitting: true }),
@@ -21,7 +22,13 @@ export default defineConfig(({ mode }) => {
       // Dev-only mirror of nginx.conf's `location /rpc/` so the same-origin
       // "/rpc" client default reaches the api (bun, :3001) in dev too.
       proxy: {
-        "/rpc": env.API_PROXY_TARGET ?? "http://localhost:3001",
+        "/rpc": api,
+        // The CRM: its routes, and the password gate's own pages. `fetchApi` answers a 401 by
+        // sending the tab to /login, which exists only on the api; unproxied, the SPA fallback
+        // serves index.html and the router renders NotFound, so signing in looks like a broken route.
+        "/api": api,
+        "/login": api,
+        "/logout": api,
       },
     },
     preview: {

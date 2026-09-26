@@ -1,159 +1,138 @@
-# alive-template-base
+# CRM
 
-> **This is a scaffold, not a finished product.**
-> When initializing a new project from this template, the AI builder should rewrite this README from scratch to describe the *actual* product being built. Everything below describes the template itself — what's wired up, the conventions to follow, and what to keep when extending it.
+A single-tenant CRM that is one React app over one Hono router over one hosted SQLite database.
+`/` redirects to `/crm`, and everything else is a view on the same seven objects: companies, people,
+deals, projects, feedback, users, workspaces.
 
-## What's in the box
+**It ships with no records.** The database is [Turso](https://turso.tech) and it is the only
+datastore: no local SQLite file, no seed fixtures, no bundled fallback. A fresh clone against a fresh
+database gives you an empty CRM with a working schema, not somebody else's contacts.
 
-| Layer       | Choice                                                              |
-|-------------|---------------------------------------------------------------------|
-| Runtime     | Bun                                                                 |
-| API         | Hono + oRPC v1                                                      |
-| Auth        | JWT (HS256) via `hono/jwt` — single password from `AUTH_SECRET`     |
-| Web         | Vite + React 19 + TanStack Router/Query/Form/Table + Tailwind v4    |
-| Validation  | Zod 4 + `@t3-oss/env-core`                                          |
-| Lint/format | Biome 2 (+ syncpack for cross-workspace dep alignment)              |
-| Tasks       | Turborepo (`dev`, `build`, `typecheck`)                             |
-| E2E         | Playwright (auto-boots api + web)                                   |
-| Build/ship  | Docker + `docker-bake.hcl` (one image per app)                      |
+This repository is a fork of [`alive-home/alive-template-base`](https://github.com/alive-home/alive-template-base)
+and keeps its layout, so improvements to the base arrive with `gh repo sync` or a merge of the base's
+`main`.
+
+## What is in it
+
+- A spreadsheet-style record grid with server-side paging, sorting and a per-object column picker
+- A record page that reads its fields out of the attribute catalog, so a new column in the database
+  renders correctly with no code change
+- A drag-and-drop pipeline board that writes moves straight back through the record endpoint
+- An accounts map (MapLibre) that keeps a checked address and a geocoded city centre visually apart
+- Tasks, notes, an overview counted entirely in SQL, and a shared-password gate in front of all of it
+
+## Stack
+
+React 19, Vite 8, TypeScript 7, TanStack Router (file routes) and Query, Tailwind 4, Radix
+primitives, Hono with oRPC, Zod 4, `@t3-oss/env-core`, Biome, Turborepo, Playwright. Runtime is
+[Bun](https://bun.sh).
 
 ```
 apps/
-  api/        Hono + oRPC + JWT auth                → bun runtime image
-  web/        Vite SPA + TanStack stack             → static nginx image
+  web/            The CRM screens: Vite SPA              → static nginx image
+  api/            Hono: CRM routes, password gate, oRPC  → bun runtime image
+    src/crm/      The CRM's server modules over Turso
+    scripts/      migrate, seed, playbook, geocoder and the outbound scripts
 packages/
-  shared/     Zod schemas + cross-app env helpers
-e2e/          Playwright suite (uses real oRPC client over HTTP)
-alive.toml    Deploy contract for hosting on Alive (see "Deploying on Alive")
-docker-bake.hcl
-compose.yaml
+  shared/         Cross-app code (empty)
+  ui/             The base template's shared UI package (unused by the CRM)
+e2e/              Playwright smoke that needs no database
+alive.toml        Deploy and dev contract for Alive
+docker-bake.hcl   One image per app
+compose.yaml      Local convenience over the same Dockerfiles
 ```
 
-## Quickstart
+## Running it
+
+You need Bun 1.2+ and a Turso database.
 
 ```bash
-bun run dev:local    # creates .env (generated AUTH_SECRET), bun install, boots api: 3001 + web: 3000
-```
-
-Or by hand:
-
-```bash
-cp .env.example .env
 bun install
-bun run dev          # turbo run dev — api: 3001, web: 3000
+cp .env.example .env                 # fill in TURSO_DATABASE_URL_CRM and TURSO_API_KEY_CRM
+bun apps/api/scripts/migrate.ts      # creates every table and describes it in the catalog
+bun run dev                          # web on 3000, api on 3001
 ```
 
-## Scripts
+`dev` runs both apps through Turborepo. Vite proxies `/rpc`, `/api`, `/login` and `/logout` to the
+api (`API_PROXY_TARGET`, `http://localhost:3001` by default); in the image nginx does the same.
+
+In an Alive workspace nothing needs starting: `alive.toml` declares the `web` (3000) and `api` (3001)
+dev servers and the workspace supervisor runs them. Set the three variables below in Alive's env
+settings; they land in `.env.development`, which the api reads after `.env`, so they win.
+
+`migrate.ts` is additive and idempotent: every table is `if not exists`, every column is added only
+when it is missing, and nothing is dropped, renamed or retyped. It is safe against a database that
+already holds data, which is the property that makes anyone actually run it. `--dry-run` prints the
+statements without executing them. Run the scripts from the repository root.
+
+### Configuration
+
+The CRM's three variables have no default in code. A missing one throws a sentence naming the
+variable rather than booting cleanly against nothing.
+
+| Variable | What it is |
+| --- | --- |
+| `TURSO_DATABASE_URL_CRM` | Which database. Ordinary config, set per environment |
+| `TURSO_API_KEY_CRM` | The database token. A rotating secret, set it on the platform |
+| `CRM_PASSWORD` | The one password in front of the app. Unset locally means no gate; unset in production means the api serves nothing |
+
+The base template's variables stay as they were: `API_BASE_URL` and `WEB_BASE_URL` are the public
+origins (the api uses `WEB_BASE_URL` for CORS), `PORT` is the api port (3001), and `VITE_API_BASE_URL`
+/ `VITE_WEB_BASE_URL` are inlined into the web bundle at build time. Only the oRPC client reads
+`VITE_API_BASE_URL`; the CRM's own requests are always same-origin `/api`.
+
+### What a clone gets, and what it does not
+
+The CRM itself works against an empty database: the grid, the record pages, tasks, notes, the
+overview, the map and the pipeline board all read the schema `migrate.ts` created.
+
+The scripts under `apps/api/scripts/` are a second thing, and half of them will not run for you. The
+outbound automation reads its tunables, its taxonomy and its recipient vetoes out of tables that
+`apps/api/scripts/seed-turso.ts` fills from a private payload, so those scripts stop with a named
+refusal rather than a default. That is deliberate: the alternative is an automation that writes email
+in somebody's name from values it invented. `apps/api/scripts/services.ts` likewise wants a host and
+a key for a scraping and enrichment API that is not part of this repo.
+
+One identifier names the original deployment and wants changing if you run your own: the
+`USER_AGENT` in `apps/api/scripts/geocode-places.ts`, which Nominatim's usage policy requires to
+identify whoever is actually making the requests.
+
+## Checks
 
 ```bash
-bun run dev:local         # one-command local stack (scripts/runtime/local.sh), no docker
-bun run dev               # turbo: api + web dev servers in parallel
-bun run build             # turbo: build all apps
-bun run lint              # biome check (fails on issues)
-bun run format            # biome format --write
-bun run typecheck         # tsc --noEmit via turbo, parallel across workspaces
-bun run test:e2e          # playwright (auto-boots api + web)
-bun run docker:build      # build both images via bake (group "default")
-bun run docker:push       # build + push to $REGISTRY
-bunx syncpack lint        # check cross-workspace dep alignment
-bunx syncpack fix         # fix mismatches
+bun run check        # Biome, the 300-line-per-file cap, then tsc --noEmit in every workspace
+bunx syncpack lint   # dependency versions agree across workspaces, pinned exactly
+bun run build        # both apps, plus the publishable root dist/
+bun run test:e2e     # Playwright boots the api (password gate on) and the web app itself
 ```
 
-## CI/CD
+Next to running dev servers, give the suite its own ports:
+`API_BASE_URL=http://localhost:3201 WEB_BASE_URL=http://localhost:3200 bun run test:e2e`.
 
-Two workflows in [`.github/workflows`](.github/workflows):
+`bun run check` is a gate, not a suggestion: `as` is banned by a Grit plugin, every source file stays
+under 300 lines, and the typechecker runs in full `strict` with `noUncheckedIndexedAccess`.
 
-- **`ci.yml`** — on every PR and push to main: biome + syncpack, typecheck, turbo build (asserts `VITE_*` got inlined), Playwright e2e (boots api + web itself), docker image builds from a clean context, and actionlint on the workflows themselves. The `ci` aggregator job is the only check branch protection needs — new jobs become required automatically.
-- **`cd.yml`** — on push to main / `v*` tags: builds and pushes both images (amd64 + arm64) to GHCR via `docker buildx bake`, then sanity-boots the pushed images and curls them. Set repository variables `API_BASE_URL` / `WEB_BASE_URL` for real public origins; otherwise localhost defaults are baked into the web bundle.
+## Deploy
 
-Shared plumbing: [`.github/actions/setup`](.github/actions/setup/action.yml) installs bun (version from `packageManager` in package.json) and does a frozen install; caches restore on every branch but only main writes them. Dependabot keeps the actions pinned.
+Two workflows in `.github/workflows`. `ci.yml` runs on every PR and push to `main`: Biome and
+syncpack, typecheck, build, the e2e smoke, both Docker images from a clean context, and actionlint.
+`cd.yml` builds and pushes both images to GHCR with `docker buildx bake`, then boots them and checks
+the login page and the gate's 401 through nginx.
 
-## Conventions for the AI builder
+Any host that runs Dockerfiles can take `apps/api/Dockerfile` and `apps/web/Dockerfile` with the repo
+root as build context; `docker buildx bake` builds both. The web image is nginx serving the built SPA
+and proxying `/rpc`, `/api`, `/login` and `/logout` to the api container, which is never public.
 
-These are load-bearing — preserve them when extending the template.
+On [Alive](https://alive.site) the contract is [`alive.toml`](alive.toml): `web` is the public
+target, `api` listens on 3001 inside the cluster, and `env_required` lists the three CRM variables, so
+a deploy is blocked until each has a value.
 
-### Type safety
+## Reading further
 
-The repo aims to be as type-safe as practical. Defaults:
+`CLAUDE.md` is the long form: why the grid is hand-written, why sorting had to move to the server,
+why the map keeps two registers of coordinates apart, and what each of the endpoints is for. It is
+written for an agent working in this repo, and it is the honest architecture document.
 
-- `strict`, `noUncheckedIndexedAccess`, `noImplicitOverride`, `noFallthroughCasesInSwitch`, `verbatimModuleSyntax`, `isolatedModules` — see [`tsconfig.base.json`](tsconfig.base.json).
-- All cross-boundary data goes through Zod (`packages/shared/src/index.ts` for shared shapes, plus per-procedure inputs in oRPC).
-- All env access goes through [`@t3-oss/env-core`](https://env.t3.gg) — never read `process.env` directly. Accessing an undeclared var throws at boot.
-- The web → api type contract is automatic: `AppRouter` is exported from `@template/api/router` and consumed by the typed oRPC client in [`apps/web/src/lib/orpc.ts`](apps/web/src/lib/orpc.ts).
-- New code should not introduce `any`. Prefer `unknown` + a Zod parse at the boundary.
+## License
 
-### Docker
-
-The repo always ships:
-
-1. **One Dockerfile per app** (`apps/<app>/Dockerfile`).
-2. **A root `docker-bake.hcl`** with a `group "default"` listing every image and a top-level `variable` block declaring every knob the hoster needs (registry, tag, public URLs, platforms). The hoster runs `docker buildx bake` against this file — no manual per-image flags.
-3. **A `compose.yaml`** for local convenience (consumes the same Dockerfiles). Production orchestration belongs to the hoster, not to compose.
-
-When adding a new app, also add: a Dockerfile under `apps/<app>/`, a target in `docker-bake.hcl`, and append it to `group "default"`. Variables that affect the build (e.g. inlined `VITE_*` values) must be declared at the top of `docker-bake.hcl` so the hoster can override them.
-
-### Auth
-
-Login surface is `auth.login` (public mutation taking `{ password }`) → returns `{ token }`. The token is an HS256 JWT signed with `AUTH_SECRET` (which doubles as the login password — fine for a single-user template, split into two env vars if you ever need real users).
-
-Server side: `protectedProcedure` in [`apps/api/src/orpc.ts`](apps/api/src/orpc.ts) reads `Authorization: Bearer <token>` and rejects with `UNAUTHORIZED` if missing/invalid. Web side: token is stored in `localStorage` via [`apps/web/src/lib/auth.ts`](apps/web/src/lib/auth.ts) and attached to every oRPC request automatically.
-
-Extend by adding more `protectedProcedure` calls — don't bypass the middleware.
-
-### Path imports
-
-Web uses Node subpath imports (`#/...`) wired in [`apps/web/package.json`](apps/web/package.json) under `"imports"`. No `tsconfig` `paths` or vite alias is needed — TS and Vite both pick up `imports` automatically. Use `#/lib/foo.ts`, not `~/lib/foo.ts` or `@/lib/foo.ts`.
-
-## Environment
-
-| Var                  | Side       | Used by             |
-|----------------------|------------|---------------------|
-| `API_BASE_URL`       | server     | api (self), e2e     |
-| `WEB_BASE_URL`       | server     | api (CORS), e2e     |
-| `VITE_API_BASE_URL`  | client     | web (build-time)    |
-| `VITE_WEB_BASE_URL`  | client     | web (build-time)    |
-| `AUTH_SECRET`        | server     | api (login + JWT)   |
-| `PORT`               | server     | api (default 3001)  |
-
-`VITE_*` values are inlined at *build* time, not runtime — they have to be present when `vite build` runs, which means they're also build args in `docker-bake.hcl`'s `web` target.
-
-## Deploying
-
-Hosting platforms that consume Dockerfiles (Fly, Railway, Render, ECS, k8s, …) point at `apps/api/Dockerfile` and `apps/web/Dockerfile` directly with the repo root as build context. Bake exists for local + CI multi-target builds and is the canonical way the AI builder ships images:
-
-```bash
-REGISTRY=ghcr.io/yourorg/myapp TAG=v1 docker buildx bake --push
-```
-
-`group "default"` builds every app; pass a target name to build a single image.
-
-### Deploying on Alive
-
-[Alive](https://alive.site) hosts projects from this template natively. The contract between the project and the host is [`alive.toml`](alive.toml) — a single file that declares which service receives external traffic, what port each service listens on, and which env vars must be set at deploy time:
-
-```toml
-[deploy]
-public_target = "web"
-
-[deploy.services.api]
-port = 3001
-env_required = ["AUTH_SECRET"]
-
-[deploy.services.web]
-port = 80
-depends_on = ["api"]
-```
-
-Three rules to keep in mind when extending the template:
-
-1. **Single public ingress.** `public_target` names exactly one service. Everything else is intra-cluster only, reachable by other containers via service-name DNS (`http://api:3001`). This is why `apps/web/nginx.conf` proxies `/rpc` to the api container — the browser only ever talks to web's hostname; web's nginx fans out to private services.
-2. **Service names are DNS labels.** Lowercase, no underscores. They double as both the bake target name in [`docker-bake.hcl`](docker-bake.hcl) and the container DNS name inside the cluster, so renaming a service is a multi-file change.
-3. **`env_required` is a contract.** Listing a key here doesn't provide a value — Alive's per-project encrypted env store does. Listing a key blocks deploys until a value is set; useful for catching missing secrets before the runner pulls images.
-
-The Alive deploy flow:
-
-1. **Build.** A short-lived builder sandbox runs `docker buildx bake --push` with `REGISTRY` and `TAG` set to the project's namespace on Alive's registry. Each pushed image is recorded with its sha256 digest.
-2. **Deploy.** A long-lived runner sandbox per project pulls images **by digest** (tags are mutable, digests are not), synthesizes a runtime compose file from `alive.toml`, runs `nerdctl compose up -d`, and reports the public URL.
-3. **Route.** Alive's edge resolves your project hostname to the runner sandbox's exposed port via a routing map refreshed on every deploy.
-
-You don't run any commands yourself — Alive's chat UI triggers the build + deploy on demand. This README section exists so the AI builder editing your project knows the conventions to preserve.
+MIT. See `LICENSE`.

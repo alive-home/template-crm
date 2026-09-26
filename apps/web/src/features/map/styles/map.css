@@ -1,0 +1,66 @@
+/*
+ * MapLibre's own chrome, restyled onto the app's tokens.
+ *
+ * Left alone, the zoom buttons and the attribution look like a 2013 Google Map bolted onto the side
+ * of the CRM: white boxes, blue links, their own radius and their own shadow. Everything here is
+ * token-driven, so the controls follow the theme including dark mode.
+ */
+
+.maplibregl-ctrl-group {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius-md);
+  box-shadow: 0 1px 2px 0 hsl(var(--foreground) / 0.05);
+}
+
+/* Least specific first: a later rule must not be weaker than one it is meant to build on. */
+.maplibregl-ctrl-group button {
+  width: 28px;
+  height: 28px;
+  background: transparent;
+}
+
+.maplibregl-ctrl-group button + button {
+  border-top: 1px solid hsl(var(--border));
+}
+
+.maplibregl-ctrl-group button:hover {
+  background: hsl(var(--muted));
+}
+
+/* The control glyphs are inline SVG with a hardcoded dark fill; this tints them to the theme. */
+.maplibregl-ctrl-group button .maplibregl-ctrl-icon {
+  filter: none;
+}
+
+.dark .maplibregl-ctrl-group button .maplibregl-ctrl-icon {
+  filter: invert(1) brightness(1.6);
+}
+
+/*
+ * Attribution. Required by the tile licence, so it is restyled to fit rather than hidden — but it is
+ * held at meta size, since it is a credit and not content.
+ */
+.maplibregl-ctrl-attrib {
+  background: hsl(var(--card) / 0.9);
+  border-radius: var(--radius-sm);
+  font-size: 10px;
+}
+
+.maplibregl-ctrl-attrib a {
+  color: hsl(var(--muted-foreground));
+}
+
+.maplibregl-ctrl-attrib-button {
+  background-color: hsl(var(--card) / 0.9);
+}
+
+.dark .maplibregl-ctrl-attrib-button {
+  filter: invert(1) brightness(1.6);
+}
+
+/* The canvas takes focus on click; the default ring is a browser blue that ignores the theme. */
+.maplibregl-canvas:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: -2px;
+}

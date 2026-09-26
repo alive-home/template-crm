@@ -9,12 +9,21 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TodosRouteImport } from './routes/todos'
+import { Route as CrmRouteRouteImport } from './routes/crm/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CrmIndexRouteImport } from './routes/crm/index'
+import { Route as CrmTasksRouteImport } from './routes/crm/tasks'
+import { Route as CrmResearchRouteImport } from './routes/crm/research'
+import { Route as CrmPipelineRouteImport } from './routes/crm/pipeline'
+import { Route as CrmPersonasRouteImport } from './routes/crm/personas'
+import { Route as CrmMapRouteImport } from './routes/crm/map'
+import { Route as CrmEmailsRouteImport } from './routes/crm/emails'
+import { Route as CrmObjectIndexRouteImport } from './routes/crm/$object/index'
+import { Route as CrmObjectIdRouteImport } from './routes/crm/$object/$id'
 
-const TodosRoute = TodosRouteImport.update({
-  id: '/todos',
-  path: '/todos',
+const CrmRouteRoute = CrmRouteRouteImport.update({
+  id: '/crm',
+  path: '/crm',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -22,40 +31,144 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CrmIndexRoute = CrmIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => CrmRouteRoute,
+} as any)
+const CrmTasksRoute = CrmTasksRouteImport.update({
+  id: '/tasks',
+  path: '/tasks',
+  getParentRoute: () => CrmRouteRoute,
+} as any)
+const CrmResearchRoute = CrmResearchRouteImport.update({
+  id: '/research',
+  path: '/research',
+  getParentRoute: () => CrmRouteRoute,
+} as any)
+const CrmPipelineRoute = CrmPipelineRouteImport.update({
+  id: '/pipeline',
+  path: '/pipeline',
+  getParentRoute: () => CrmRouteRoute,
+} as any)
+const CrmPersonasRoute = CrmPersonasRouteImport.update({
+  id: '/personas',
+  path: '/personas',
+  getParentRoute: () => CrmRouteRoute,
+} as any)
+const CrmMapRoute = CrmMapRouteImport.update({
+  id: '/map',
+  path: '/map',
+  getParentRoute: () => CrmRouteRoute,
+} as any)
+const CrmEmailsRoute = CrmEmailsRouteImport.update({
+  id: '/emails',
+  path: '/emails',
+  getParentRoute: () => CrmRouteRoute,
+} as any)
+const CrmObjectIndexRoute = CrmObjectIndexRouteImport.update({
+  id: '/$object/',
+  path: '/$object/',
+  getParentRoute: () => CrmRouteRoute,
+} as any)
+const CrmObjectIdRoute = CrmObjectIdRouteImport.update({
+  id: '/$object/$id',
+  path: '/$object/$id',
+  getParentRoute: () => CrmRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/todos': typeof TodosRoute
+  '/crm': typeof CrmRouteRouteWithChildren
+  '/crm/emails': typeof CrmEmailsRoute
+  '/crm/map': typeof CrmMapRoute
+  '/crm/personas': typeof CrmPersonasRoute
+  '/crm/pipeline': typeof CrmPipelineRoute
+  '/crm/research': typeof CrmResearchRoute
+  '/crm/tasks': typeof CrmTasksRoute
+  '/crm/': typeof CrmIndexRoute
+  '/crm/$object/$id': typeof CrmObjectIdRoute
+  '/crm/$object/': typeof CrmObjectIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/todos': typeof TodosRoute
+  '/crm/emails': typeof CrmEmailsRoute
+  '/crm/map': typeof CrmMapRoute
+  '/crm/personas': typeof CrmPersonasRoute
+  '/crm/pipeline': typeof CrmPipelineRoute
+  '/crm/research': typeof CrmResearchRoute
+  '/crm/tasks': typeof CrmTasksRoute
+  '/crm': typeof CrmIndexRoute
+  '/crm/$object/$id': typeof CrmObjectIdRoute
+  '/crm/$object': typeof CrmObjectIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/todos': typeof TodosRoute
+  '/crm': typeof CrmRouteRouteWithChildren
+  '/crm/emails': typeof CrmEmailsRoute
+  '/crm/map': typeof CrmMapRoute
+  '/crm/personas': typeof CrmPersonasRoute
+  '/crm/pipeline': typeof CrmPipelineRoute
+  '/crm/research': typeof CrmResearchRoute
+  '/crm/tasks': typeof CrmTasksRoute
+  '/crm/': typeof CrmIndexRoute
+  '/crm/$object/$id': typeof CrmObjectIdRoute
+  '/crm/$object/': typeof CrmObjectIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/todos'
+  fullPaths:
+    | '/'
+    | '/crm'
+    | '/crm/emails'
+    | '/crm/map'
+    | '/crm/personas'
+    | '/crm/pipeline'
+    | '/crm/research'
+    | '/crm/tasks'
+    | '/crm/'
+    | '/crm/$object/$id'
+    | '/crm/$object/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/todos'
-  id: '__root__' | '/' | '/todos'
+  to:
+    | '/'
+    | '/crm/emails'
+    | '/crm/map'
+    | '/crm/personas'
+    | '/crm/pipeline'
+    | '/crm/research'
+    | '/crm/tasks'
+    | '/crm'
+    | '/crm/$object/$id'
+    | '/crm/$object'
+  id:
+    | '__root__'
+    | '/'
+    | '/crm'
+    | '/crm/emails'
+    | '/crm/map'
+    | '/crm/personas'
+    | '/crm/pipeline'
+    | '/crm/research'
+    | '/crm/tasks'
+    | '/crm/'
+    | '/crm/$object/$id'
+    | '/crm/$object/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  TodosRoute: typeof TodosRoute
+  CrmRouteRoute: typeof CrmRouteRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/todos': {
-      id: '/todos'
-      path: '/todos'
-      fullPath: '/todos'
-      preLoaderRoute: typeof TodosRouteImport
+    '/crm': {
+      id: '/crm'
+      path: '/crm'
+      fullPath: '/crm'
+      preLoaderRoute: typeof CrmRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -65,12 +178,103 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/crm/': {
+      id: '/crm/'
+      path: '/'
+      fullPath: '/crm/'
+      preLoaderRoute: typeof CrmIndexRouteImport
+      parentRoute: typeof CrmRouteRoute
+    }
+    '/crm/tasks': {
+      id: '/crm/tasks'
+      path: '/tasks'
+      fullPath: '/crm/tasks'
+      preLoaderRoute: typeof CrmTasksRouteImport
+      parentRoute: typeof CrmRouteRoute
+    }
+    '/crm/research': {
+      id: '/crm/research'
+      path: '/research'
+      fullPath: '/crm/research'
+      preLoaderRoute: typeof CrmResearchRouteImport
+      parentRoute: typeof CrmRouteRoute
+    }
+    '/crm/pipeline': {
+      id: '/crm/pipeline'
+      path: '/pipeline'
+      fullPath: '/crm/pipeline'
+      preLoaderRoute: typeof CrmPipelineRouteImport
+      parentRoute: typeof CrmRouteRoute
+    }
+    '/crm/personas': {
+      id: '/crm/personas'
+      path: '/personas'
+      fullPath: '/crm/personas'
+      preLoaderRoute: typeof CrmPersonasRouteImport
+      parentRoute: typeof CrmRouteRoute
+    }
+    '/crm/map': {
+      id: '/crm/map'
+      path: '/map'
+      fullPath: '/crm/map'
+      preLoaderRoute: typeof CrmMapRouteImport
+      parentRoute: typeof CrmRouteRoute
+    }
+    '/crm/emails': {
+      id: '/crm/emails'
+      path: '/emails'
+      fullPath: '/crm/emails'
+      preLoaderRoute: typeof CrmEmailsRouteImport
+      parentRoute: typeof CrmRouteRoute
+    }
+    '/crm/$object/': {
+      id: '/crm/$object/'
+      path: '/$object'
+      fullPath: '/crm/$object/'
+      preLoaderRoute: typeof CrmObjectIndexRouteImport
+      parentRoute: typeof CrmRouteRoute
+    }
+    '/crm/$object/$id': {
+      id: '/crm/$object/$id'
+      path: '/$object/$id'
+      fullPath: '/crm/$object/$id'
+      preLoaderRoute: typeof CrmObjectIdRouteImport
+      parentRoute: typeof CrmRouteRoute
+    }
   }
 }
 
+interface CrmRouteRouteChildren {
+  CrmEmailsRoute: typeof CrmEmailsRoute
+  CrmMapRoute: typeof CrmMapRoute
+  CrmPersonasRoute: typeof CrmPersonasRoute
+  CrmPipelineRoute: typeof CrmPipelineRoute
+  CrmResearchRoute: typeof CrmResearchRoute
+  CrmTasksRoute: typeof CrmTasksRoute
+  CrmIndexRoute: typeof CrmIndexRoute
+  CrmObjectIdRoute: typeof CrmObjectIdRoute
+  CrmObjectIndexRoute: typeof CrmObjectIndexRoute
+}
+
+const CrmRouteRouteChildren: CrmRouteRouteChildren = {
+  CrmEmailsRoute: CrmEmailsRoute,
+  CrmMapRoute: CrmMapRoute,
+  CrmPersonasRoute: CrmPersonasRoute,
+  CrmPipelineRoute: CrmPipelineRoute,
+  CrmResearchRoute: CrmResearchRoute,
+  CrmTasksRoute: CrmTasksRoute,
+  CrmIndexRoute: CrmIndexRoute,
+  CrmObjectIdRoute: CrmObjectIdRoute,
+  CrmObjectIndexRoute: CrmObjectIndexRoute,
+}
+
+const CrmRouteRouteWithChildren = CrmRouteRoute._addFileChildren(
+  CrmRouteRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  TodosRoute: TodosRoute,
+  CrmRouteRoute: CrmRouteRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

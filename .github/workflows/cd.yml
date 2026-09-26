@@ -70,7 +70,7 @@ jobs:
           # First bake builds and pushes; the rest re-push the cached layers
           # under the extra tags (manifest-only, no rebuild). -f is
           # load-bearing: bare `bake` also merges compose.yaml, whose
-          # required AUTH_SECRET interpolation fails outside local dev.
+          # required CRM_PASSWORD interpolation fails outside local dev.
           #
           # A GHA cache whose blobs were evicted fails the build with
           # "blob sha256:… not found"; retry once without cache-from so a
@@ -102,7 +102,7 @@ jobs:
           docker run -d --name api --network sanity -p 3001:3001 \
             -e API_BASE_URL=http://localhost:3001 \
             -e WEB_BASE_URL=http://localhost:3000 \
-            -e AUTH_SECRET=cd-sanity-check-secret \
+            -e CRM_PASSWORD=cd-sanity-check-secret \
             "$REGISTRY/api:$TAG"
           for _ in $(seq 1 30); do
             curl -fsS http://localhost:3001/health >/dev/null 2>&1 && break
@@ -115,8 +115,9 @@ jobs:
             sleep 1
           done
           curl -fsS http://localhost:8080/ >/dev/null
-          # oRPC through web's nginx → api.
-          curl -fsS -X POST -H 'content-type: application/json' -d '{}' \
-            http://localhost:8080/rpc/health
+          # The CRM through web's nginx → api: the gate's login page, and a
+          # signed-out API caller refused with a 401 rather than a record.
+          curl -fsS http://localhost:8080/login | grep "Sign in" >/dev/null
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/api/crm/summary)" = 401
           docker rm -f api web
           docker network rm sanity

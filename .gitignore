@@ -31,3 +31,22 @@ e2e/.cache
 .claude/settings.json
 .claude/settings.local.json
 .claude/worktrees/
+
+# CRM: the env files Alive and the scripts write, and local state that holds real people.
+#
+# .env.development is where Alive writes the env keys set in its settings (the Turso token, the CRM
+# password, the services key). There is no local database: a *.db file or a crm-export/ in the tree
+# is a hand-run dump full of real people, one `git add .` away from a public repo.
+.env.development
+.env.*
+!.env.example
+crm-export/
+*.db*
+.alive/
+.uploads/
+.DS_Store
+
+# private/ is a local working directory and it stays out of git. What it held is rows in Turso now,
+# read with `bun apps/api/scripts/playbook.ts`; a tracked copy would be the second copy, and the one
+# that travels with every clone. Nothing reads private/ at runtime, so an empty one breaks nothing.
+private/

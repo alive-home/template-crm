@@ -110,7 +110,7 @@ jobs:
       # `cache-from type=gha` when invoking buildx directly.
       - uses: crazy-max/ghaction-github-runtime@v4
       # -f is load-bearing: bare `bake` also merges compose.yaml, whose
-      # required AUTH_SECRET interpolation fails outside local dev.
+      # required CRM_PASSWORD interpolation fails outside local dev.
       - name: Build images (amd64, no push)
         # Retry without cache-from if main's GHA cache has evicted blobs
         # ("blob sha256:… not found"); see cd.yml.

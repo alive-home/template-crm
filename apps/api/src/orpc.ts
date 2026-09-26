@@ -1,17 +1,8 @@
-import { ORPCError, os } from "@orpc/server"
-import { readSession } from "./auth.ts"
+import { os } from "@orpc/server"
 
 // Initial context supplied by the fetch handler in index.ts.
 export type Context = { headers: Headers }
 
-const base = os.$context<Context>()
-
-export const publicProcedure = base.use(async ({ context, next }) => {
-  const session = await readSession(context.headers)
-  return next({ context: { session } })
-})
-
-export const protectedProcedure = publicProcedure.use(({ context, next }) => {
-  if (!context.session) throw new ORPCError("UNAUTHORIZED")
-  return next({ context: { session: context.session } })
-})
+// No session here: the CRM's password gate in index.ts runs before /rpc, so a procedure is
+// exactly as protected as every /api/crm route.
+export const publicProcedure = os.$context<Context>()

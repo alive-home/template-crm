@@ -9,7 +9,11 @@ services:
     environment:
       API_BASE_URL: ${API_BASE_URL:-http://localhost:3001}
       WEB_BASE_URL: ${WEB_BASE_URL:-http://localhost:3000}
-      AUTH_SECRET: ${AUTH_SECRET:?set AUTH_SECRET}
+      # The image runs NODE_ENV=production, where an unset CRM_PASSWORD serves nothing; refuse
+      # to start instead. Without the Turso pair the api boots and names them per request.
+      CRM_PASSWORD: ${CRM_PASSWORD:?set CRM_PASSWORD}
+      TURSO_DATABASE_URL_CRM: ${TURSO_DATABASE_URL_CRM:-}
+      TURSO_API_KEY_CRM: ${TURSO_API_KEY_CRM:-}
       PORT: "3001"
     ports: ["3001:3001"]
 

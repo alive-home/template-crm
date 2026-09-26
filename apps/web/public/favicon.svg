@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="CRM">
+  <!--
+    The record grid, which is what this app is: one pinned column of names and the rows beside it.
+    Drawn at 32 and read at 16, so every mark is at least two pixels thick there.
+
+    The plate flips with the browser's theme. A near-black square is invisible against a dark tab
+    strip, and a favicon nobody can find is the same as no favicon.
+  -->
+  <style>
+    .plate { fill: #1c1b1a }
+    .mark  { fill: #ffffff }
+    @media (prefers-color-scheme: dark) {
+      .plate { fill: #f2f0ee }
+      .mark  { fill: #1c1b1a }
+    }
+  </style>
+  <rect class="plate" width="32" height="32" rx="7" />
+  <rect class="mark" x="7" y="8" width="4" height="16" rx="2" />
+  <rect class="mark" x="14" y="9" width="11" height="4" rx="2" opacity=".9" />
+  <rect class="mark" x="14" y="19" width="11" height="4" rx="2" opacity=".5" />
+</svg>

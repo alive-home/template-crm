@@ -30,6 +30,11 @@ WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=build /repo/apps/api/dist ./dist
 COPY --from=deps  /repo/node_modules ./node_modules
+# The bundle carries every JS dependency but not a native binding: the libsql
+# driver requires `@libsql/<platform>` by name at startup. bun's isolated linker
+# keeps it under node_modules/.bun, whose hoisted view is .bun/node_modules.
+# Without this the image builds green and dies on boot with "Cannot find module".
+ENV NODE_PATH=/app/node_modules/.bun/node_modules
 COPY --from=deps  /repo/apps/api/package.json ./package.json
 EXPOSE 3001
 CMD ["bun", "run", "dist/index.js"]

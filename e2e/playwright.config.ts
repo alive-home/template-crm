@@ -15,7 +15,11 @@ if (existsSync(envFile)) {
 
 const WEB = process.env.WEB_BASE_URL ?? "http://localhost:3000"
 const API = process.env.API_BASE_URL ?? "http://localhost:3001"
-const AUTH_SECRET = process.env.AUTH_SECRET ?? "dev-secret-do-not-use-in-prod"
+// The api starts with the CRM's password gate on, so the suite walks through the door as well as
+// the room. `||`, not `??`: .env.example carries an empty CRM_PASSWORD, which means "no gate".
+// Written back to process.env so the specs read the same value.
+const CRM_PASSWORD = process.env.CRM_PASSWORD || "e2e-crm-password"
+process.env.CRM_PASSWORD = CRM_PASSWORD
 
 export default defineConfig({
   testDir: "./tests",
@@ -34,14 +38,16 @@ export default defineConfig({
       url: `${API}/health`,
       reuseExistingServer: !process.env.CI,
       cwd: "..",
-      env: { AUTH_SECRET, API_BASE_URL: API, WEB_BASE_URL: WEB },
+      // PORT follows the URL, so the suite can run beside the supervised dev servers on 3000/3001
+      // (which it would otherwise reuse, with their own password or none) on any free pair.
+      env: { CRM_PASSWORD, API_BASE_URL: API, WEB_BASE_URL: WEB, PORT: new URL(API).port },
     },
     {
       command: "bun --filter @template/web dev",
       url: WEB,
       reuseExistingServer: !process.env.CI,
       cwd: "..",
-      env: { VITE_API_BASE_URL: API, VITE_WEB_BASE_URL: WEB },
+      env: { VITE_API_BASE_URL: API, VITE_WEB_BASE_URL: WEB, PORT: new URL(WEB).port, API_PROXY_TARGET: API },
     },
   ],
 })

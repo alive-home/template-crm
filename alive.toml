@@ -31,9 +31,10 @@ public_target = "web"
 # the intra-cluster DNS endpoint (http://api:3001) — never exposed
 # publicly because `api` is not the public_target.
 port = 3001
-# AUTH_SECRET is the JWT signing key + login password. Required for
-# every deploy; the deployer fails fast if it's missing.
-env_required = ["AUTH_SECRET"]
+# The CRM's database and its one password. Required for every deploy:
+# without the Turso pair every /api/crm request fails, and without
+# CRM_PASSWORD a production api serves nothing.
+env_required = ["TURSO_DATABASE_URL_CRM", "TURSO_API_KEY_CRM", "CRM_PASSWORD"]
 
 [deploy.services.web]
 # Container port the nginx in apps/web listens on (see apps/web/Dockerfile

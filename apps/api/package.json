@@ -2,6 +2,7 @@
   "name": "@template/api",
   "version": "0.0.0",
   "dependencies": {
+    "@libsql/client": "0.17.4",
     "@orpc/server": "1.15.4",
     "@t3-oss/env-core": "0.13.11",
     "@template/shared": "workspace:*",
